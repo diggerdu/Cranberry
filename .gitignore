@@ -106,3 +106,4 @@ venv.bak/
 *.pth
 *.wav
 .wav
+*.swp
