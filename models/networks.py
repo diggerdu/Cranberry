@@ -1,8 +1,8 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torch.nn import Module
 from torch.autograd import Variable
-from torch.nn.modules import Module
 import numpy as np
 from collections import OrderedDict
 from . import densenet_efficient as dens
@@ -41,7 +41,7 @@ def define_G(n_fft, hop, gpu_ids=[]):
     if use_gpu:
         assert (torch.cuda.is_available())
 
-    netG = AuFCNWrapper(n_fft, hop, gpu_ids)
+    netG = nn.DataParallel(AuFCN(n_fft, hop))
 
     if len(gpu_ids) > 0:
         netG.cuda(device=gpu_ids[0])
@@ -155,7 +155,7 @@ class AuFCNWrapper(nn.Module):
     def forward(self, input):
         if self.gpu_ids and isinstance(input.data,
                                        torch.cuda.FloatTensor):
-            output = nn.parallel.data_parallel(self.model, input, self.gpu_ids)
+            output = nn.DataParallel(self.model, input, self.gpu_ids)
             print("network G output", output.size())
             return output
         else:
@@ -168,29 +168,23 @@ class AuFCNWrapper(nn.Module):
 class AuFCN(nn.Module):
     def __init__(self, n_fft, hop):
         super(AuFCN, self).__init__()
-        self.stft_model = tf.stft(n_fft, hop)
-        self.istft_model = tf.istft(n_fft, hop)
+        self.mdct_model = tf.mdct(n_fft, hop)
+        self.imdct_model = tf.imdct(n_fft, hop)
         fcn = None
         fcn = dens.DenseNetEfficient(growth_rate=12, block_config=(4, 4, 4, 4), compression=0.5,
                                      num_init_features=24, bn_size=4, drop_rate=0)
         self.fcn = fcn
 
     def forward(self, sample):
-        noisy_real, noisy_imag, ac = self.stft_model(sample)
-        noisy_comp = torch.cat((noisy_real, noisy_imag), dim=1)
-        fcnOutput = self.fcn(noisy_comp)
+        noisy_spec = self.mdct_model(sample)
+        fcnOutput = self.fcn(noisy_spec)
 
-        outputReal, outputImag = torch.chunk(fcnOutput, chunks=2, dim=1)
-
-        clean_real = outputReal * noisy_real
-        clean_imag = outputImag * noisy_imag
-        ac = 0. * ac
-        ac.requries_grad = False
-        estimated_clean_frame = self.istft_model(clean_real, clean_imag, ac)
+        clean_spec = fcnOutput * noisy_spec
+        estimated_clean_frame = self.imdct_model(clean_spec)
 
 
         return {'time':estimated_clean_frame,
-                'spec':torch.sqrt(torch.pow(clean_real, 2) + torch.pow(clean_imag, 2))}
+                'spec':clean_spec}
 
 
 class Tanh_rescale(Module):

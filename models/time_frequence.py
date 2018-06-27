@@ -206,6 +206,92 @@ def _get_stft_kernels(nfft, window):
     return real_kernels, imag_kernels
 
 
+class imdct(nn.Module):
+    def __init__(self, nfft=512, hop_length=256):
+        super(imdct, self).__init__()
+        assert nfft % 2 == 0
+        assert hop_length <= nfft
+        self.hop_length = hop_length
+
+        self.nfft = int(nfft)
+        self.n_freq = n_freq = int(nfft / 2)
+        self.kernels = _get_imdct_kernels(nfft)
+        trans_kernels = np.zeros((nfft, nfft), np.float64)
+        np.fill_diagonal(trans_kernels, np.ones((nfft, ), dtype=np.float64))
+        # self.win_cof = 1 / scipy.signal.get_window("hanning", nfft)
+        # self.win_cof[0] = 0
+        # self.win_cof = torch.from_numpy(self.win_cof).float()
+        # self.win_cof = 11nn.Parameter(self.win_cof, requires_grad=False)
+        self.trans_kernels = nn.Parameter(torch.from_numpy(trans_kernels[:, np.newaxis, np.newaxis, :]).float())
+
+    def forward(self, spec):
+        '''
+        batch None frequency frame
+        '''
+        assert spec.size()[2] == self.n_freq
+        nfft = self.nfft
+        hop = self.hop_length
+
+        # complex conjugate
+        output = F.conv2d(spec, self.kernels)
+
+        output = output * 4 / float(self.nfft)
+
+        output = F.conv_transpose2d(output, self.trans_kernels, stride=self.hop_length)
+        output = output.squeeze(1)
+        output = output.squeeze(1)
+        # output[:, :hop] = output[:, :hop].mul(self.win_cof[:hop])
+        # output[:, -(nfft - hop):] = output[:, -(nfft - hop):].mul(self.win_cof[-(nfft - hop):])
+        return output
+
+def _get_imdct_kernels(nfft):
+    nfft = int(nfft)
+    assert nfft % 2 == 0
+    def kernel_fn(time, freq):
+        win_cof = np.sin(np.pi*time/float(nfft))
+        return np.cos(np.pi/float(nfft)*(2*time+1+float(nfft)/2)*(freq+1/2))*win_cof
+    kernels = np.fromfunction(kernel_fn, (int(nfft), int(nfft//2)), dtype=np.float64)
+    
+    kernels = nn.Parameter(torch.from_numpy(kernels[:, np.newaxis, :, np.newaxis]).float())
+
+    return kernels
+
+
+
+class mdct(nn.Module):
+    def __init__(self, nfft=512, hop_length=256):
+        super(mdct, self).__init__()
+        assert nfft % 2 == 0
+
+        self.hop_length = hop_length
+        self.n_freq = n_freq = nfft//2 + 1
+
+        self.kernels = _get_mdct_kernels(nfft)
+
+    def forward(self, sample):
+        sample = sample.unsqueeze(1)
+        sample = sample.unsqueeze(1)
+
+        spec = F.conv2d(sample, self.kernels, stride=self.hop_length)
+
+        spec = spec.permute(0, 2, 1, 3)
+
+        return spec
+
+
+def _get_mdct_kernels(nfft):
+    nfft = int(nfft)
+    assert nfft % 2 == 0
+
+    def kernel_fn(freq, time):
+        win_cof = np.sin(np.pi*time/float(nfft))
+        return np.cos(np.pi/float(nfft)*(2*time+1+float(nfft)/2)*(freq+1/2))*win_cof
+
+    kernels = np.fromfunction(kernel_fn, (int(nfft//2), int(nfft)), dtype=np.float64)
+ 
+    kernels = nn.Parameter(torch.from_numpy(kernels[:, np.newaxis, np.newaxis, :]).float())
+
+    return kernels
 
 
 class Spectrogram(nn.Module):

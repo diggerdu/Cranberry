@@ -212,7 +212,7 @@ class DenseNetEfficient(nn.Module):
         #       )
 
         # First convolution
-        self.features = nn.Sequential(OrderedDict([('conv0', nn.Conv2d(2, num_init_features, kernel_size=3, stride=1,
+        self.features = nn.Sequential(OrderedDict([('conv0', nn.Conv2d(1, num_init_features, kernel_size=3, stride=1,
                                                          padding=1, bias=False)), ]))
         #num_features = num_init_features
         # for i, num_layers in enumerate(block_config):
@@ -273,7 +273,7 @@ class DenseNetEfficient(nn.Module):
         final_layer = nn.Sequential(OrderedDict([
             ('final_denseblock', _DenseBlock(num_layers=2, num_input_features=num_features, bn_size=bn_size, growth_rate=4,
                                              drop_rate=drop_rate)),
-            ('final_conv', nn.Conv2d(in_channels=num_features+2*4, out_channels=2, kernel_size=(1, 1), padding=0,))
+            ('final_conv', nn.Conv2d(in_channels=num_features+2*4, out_channels=1, kernel_size=(1, 1), padding=0,))
             # ('tanh', nn.Tanh())
         ]))
         self.features.add_module('final_layer', final_layer)

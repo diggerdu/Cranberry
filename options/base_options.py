@@ -52,8 +52,8 @@ class BaseOptions():
         self.opt.len = self.opt.nfft + (self.opt.nFrames - 1) * self.opt.hop
         str_ids = self.opt.gpu_ids.split(',')
         self.opt.gpu_ids = []
-        if self.opt.isTrain:
-            assert self.opt.specLossStart < self.opt.nfft
+        # if self.opt.isTrain:
+        #     assert self.opt.specLossStart < self.opt.nfft
         for str_id in str_ids:
             id = int(str_id)
             if id >= 0:
