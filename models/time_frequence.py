@@ -248,7 +248,7 @@ def _get_imdct_kernels(nfft):
     nfft = int(nfft)
     assert nfft % 2 == 0
     def kernel_fn(time, freq):
-        win_cof = np.sin(np.pi*time/float(nfft))
+        win_cof = np.sin(np.pi*(2*time+1)/(2*float(nfft)))
         return np.cos(np.pi/float(nfft)*(2*time+1+float(nfft)/2)*(freq+1/2))*win_cof
     kernels = np.fromfunction(kernel_fn, (int(nfft), int(nfft//2)), dtype=np.float64)
     
@@ -284,7 +284,7 @@ def _get_mdct_kernels(nfft):
     assert nfft % 2 == 0
 
     def kernel_fn(freq, time):
-        win_cof = np.sin(np.pi*time/float(nfft))
+        win_cof = np.sin(np.pi*(2*time+1)/(2*float(nfft)))     
         return np.cos(np.pi/float(nfft)*(2*time+1+float(nfft)/2)*(freq+1/2))*win_cof
 
     kernels = np.fromfunction(kernel_fn, (int(nfft//2), int(nfft)), dtype=np.float64)

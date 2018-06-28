@@ -81,7 +81,7 @@ model = create_model(opt)
 #cleanPath = "/home/diggerdu/dataset/chineseMix/li2.wav"
 cleanPath = "/mnt/dataset/audio/ZTE/CHANNEL0/WAVE/SPEAKER0001/SESSION0/000010187.WAV"
 #cleanPath = "/home/diggerdu/manifestdestiny/Cranberry/checkpoints/chinese-0db/enhance.wav"
-noisePath = "/home/diggerdu/dataset/Large/babble/59899-robinhood76-00309crowd2-116.wav"
+noisePath = "/home/diggerdu/Assd/dataset/Large/babble/59899-robinhood76-00309crowd2-116.wav"
 #noisePath = "/home/diggerdu/dataset/speech/14.wav"
 #cleanPath = "/home/diggerdu/dataset/speech/14.wav"
 

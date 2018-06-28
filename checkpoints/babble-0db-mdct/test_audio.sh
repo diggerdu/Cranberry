@@ -10,7 +10,6 @@ python test.py \
  --snr 0 \
  --name $expName --model pix2pix --which_model_netG wide_resnet_3blocks \
  --ngf 32 \
- --input_nc 1 --output_nc 1  \
  --which_direction AtoB --nThreads 1 \
  --nfft 512 --hop 256 --nFrames 128 \
  --gpu_ids 0 --batchSize 1  --how_many 6 \
