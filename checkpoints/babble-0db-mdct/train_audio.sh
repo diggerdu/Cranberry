@@ -15,6 +15,6 @@ python train.py \
  --nfft 512 --hop 256 --nFrames 256 --batchSize  5\
  --split_hop 0 \
  --niter 10000 --niter_decay 30 \
- --lr 0.001 \
+ --lr 0.0005 \
  --gpu_ids 0 \
 #  --serial_batches
